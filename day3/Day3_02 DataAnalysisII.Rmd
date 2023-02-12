@@ -1,8 +1,7 @@
 ---
-title: "R Notebook"
+title: "Day3_01 Data Analysis II"
 output: html_notebook
 ---
-
 
 # การวิเคราะห์ความสัมพันธ์
 
@@ -17,6 +16,7 @@ output: html_notebook
 
 ```{r}
 library(dplyr)
+
 dat <- read.csv("TeacherSalaryData.csv", 
                 header = TRUE,
                 stringsAsFactors = TRUE)
@@ -36,6 +36,7 @@ dat <- dat %>%
 
 ```{r}
 head(dat)
+glimpse(dat)
 ```
 
 ## ฟังก์ชัน `plot()`
@@ -48,36 +49,47 @@ head(dat)
 
 -   ถ้า x เป็นตัวแปรจัดประเภท และ y เป็นตัวแปรจัดประเภท จะให้ mosaic plot
 
-## สำรวจความสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ 
+## สำรวจความสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ
+
+แผนภาพกระจาย (scatter plot)
 
 ```{r fig.height=4.5}
 par(mfrow=c(1,2))
-plot(dat$yrs.since.phd, dat$salary, pch=16, col="steelblue")
-plot(dat$yrs.since.phd, dat$salary, pch=16, col="orange")
+plot(x= dat$yrs.since.phd, y = dat$salary, pch=16, col="steelblue",
+     cex = 2, ylab ="Salary", xlab= "year sinnce phd",
+     cex.lab=2, main="Scatter plot 1")
+plot(x= dat$yrs.since.phd, y = dat$salary, pch=16, col="orange",
+     cex =2)
 ```
 
-## สำรวจความสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ 
+## สำรวจความสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ
+
+<https://rpkgs.datanovia.com/ggpubr/>
 
 ```{r fig.height=4.5}
 library(ggpubr)
 ggscatter(dat, x = "yrs.since.phd",
                y = "salary",
-          add = c("reg.line"), col= "steelblue")
+          add = c("loess"), col= "steelblue")
 ```
 
 # สหสัมพันธ์
 
 ## สหสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ
 
+-   correlation เป็นสถิติที่ใช้วิเคราะห์**ความสัมพันธ์เชิงเส้นตรง (linear association)** ระหว่างตัวแปรสองตัว
+
+-   correlation บอกอิทธิพลไม่ได้ (ไม่ให้ slope) แต่บอกระดับของความสัมพันธ์เชิงเส้นเฉย ๆ
+
 ฟังก์ชัน `cor()` ใช้หาค่า Correlation ระหว่างตัวแปรเชิงปริมาณที่กำหนด
 
 -   ทิศทาง (+, -)
 
--   ขนาด \[-1, 1\]
+-   ขนาด
 
 -   นัยสำคัญทางสถิติ
 
--   $R^2$  - coefficient of determination
+-   $R^2$ - coefficient of determination
 
 ## ขนาดและทิศทางของสหสัมพันธ์
 
@@ -89,7 +101,24 @@ ggscatter(dat, x = "yrs.since.phd",
 
 ## Syntax สำหรับคำนวณ correlation ใน R
 
+```{r}
+cor(dat$salary, dat$yrs.since.phd, 
+    use = "complete.obs")
+
+# calculate correlation matrix
+dat %>% 
+  select(salary, yrs.since.phd, yrs.service) %>%
+  cor()
+
+plot(dat$yrs.since.phd, dat$yrs.service)
+```
+
 ```{r eval=F}
+# calculate correlation coefficient
+cor(x, y = NULL, use = "everything",
+    method = c("pearson", "kendall", "spearman"))
+
+# calcuate test stat for correlation
 cor.test(x, y,
          alternative = c("two.sided", 
                          "less", 
@@ -97,6 +126,12 @@ cor.test(x, y,
          method = c("pearson", 
                     "kendall", 
                     "spearman"))
+```
+
+```{r}
+# H0: rho <= 0 vs H1: rho > 0
+cor.test(dat$salary, dat$yrs.since.phd,
+         alternative = "greater")
 ```
 
 ## การคำนวณ correlation ด้วย R
@@ -130,6 +165,11 @@ ggscatter(dat, x = "yrs.since.phd",
 ```{r fig.height=4}
 ggscatter(dat, x = "yrs.since.phd",
                y = "salary",
+          add = c("loess"))
+
+
+ggscatter(dat, x = "yrs.since.phd",
+               y = "salary",
           add = c("reg.line"), col= "discipline")
 ```
 
@@ -141,27 +181,31 @@ ggscatter(dat, x = "yrs.since.phd",
 
 ## สรุป
 
-ผลการสำรวจข้อมูลข้างต้นพบว่า ...
+ผลการสำรวจข้อมูลข้างต้นพบว่า
 
+-   ตัวแปรอิสระทั้งหมดพอที่จะใช้อธิบาย/ทำนาย ตัวแปรตาม salary ได้ แต่ก็ต้องลอง model ดูก่อน
 
+-   ประสบการทำงานทั้งสองตัวแปร มีแนวโน้มว่าอาจจะทำให้เกิดปัญหา multicollinearity ขึ้น ดังนั้นก็ต้องระวังไว้หน่อย
 
-# Modelling 
+-   การใส่ term interaction ระหว่าง yrs.since.phdกับ discipline และ yrs.since.phdกับsex อาจจะช่วยเพิ่มประสิทธิภาพการทำนาย/อธิบาย ของโมเดลได้
+
+-   อีกทางเลือกหนึ่งคือการโมเดลด้วย polynomial regression
+
+# Modelling
 
 ## Modelling: Regression analysis
 
-- Simple Regression Analysis
+-   Simple Regression Analysis
 
-- Multiple Regression Analysis
+-   Multiple Regression Analysis
 
-- Multiple Regression Analysis with Interaction??
-
+-   Multiple Regression Analysis with Interaction??
 
 ## วัตถุประสงค์ของการวิเคราะห์การถดถอย
 
 -   เพื่ออธิบายความสัมพันธ์ระหว่างตัวแปรตามกับตัวแปรอิสระ
 
 -   เพื่อทำนายแนวโน้มตัวแปรตามด้วยตัวแปรอิสระ
-
 
 # Job 1: Simple Regression
 
@@ -175,20 +219,34 @@ $\hat{salary} = b_0+b_1 \times yrs.service$
 
 syntax สำหรับวิเคราะห์ regression ใน R
 
+**salary = 99974.7 + 779.6 yrs.service**
+
+วัตถุประสงค์การใช้งาน regression
+
+-   อธิบายความสัมพันธ์ระหว่างตัวแปรตามกับตัวแปรอิสระ
+
+-   ใช้ทำนายแนวโน้มของตัวแปรตามด้วยข้อมูลของตัวแปรอิสระ
+
 ```{r}
 fit <- lm(salary ~ yrs.service, data = dat)
 summary(fit)
 ```
 
-
 ## ลองแปลผลการวิเคราะห์
-
 
 เราสามารถแปลผลเพื่ออธิบายความสัมพันธ์ ระหว่างตัวแปรตามกับตัวแปรอิสระได้จากค่าสัมประสิทธิ์การถดถอย
 
--   สัมประสิทธิ์ความชัน = 779.6
+-   **สัมประสิทธิ์ความชัน = 779.6**
 
--   สัมประสิทธิ์จุดตัดแกน y = 99974.7
+    ถ้ามีประสบการณ์การเป็นอาจารย์มากขึน 1 ปี จะมีเงินเดือนโดยเฉลี่ยเพิ่มขึ้น 779.6 บาท
+
+-   **สัมประสิทธิ์จุดตัดแกน y = 99974.7**
+
+อาจารย์ใหม่ ๆ ซิง ๆ (ยังไม่มีประสบการณ์การเป็นอาจารย์เลย) จะมีเงินเดือนโดยเฉลี่ย 99974.6 บาท
+
+```{r}
+summary(dat)
+```
 
 ## Assumptions Checking
 
@@ -200,24 +258,25 @@ summary(fit)
 
 -   Homoscedasticity
 
-
 ## Calculate Residual Plots
 
 ```{r}
-par(mfrow=c(1,3))
-plot(fit, 1:3)
-```
 
+plot(fit, 6)
+```
 
 ## การคำนวณค่าทำนายจากสมการถดถอย
 
 เราสามารถใช้ฟังก์ชัน `predict()` เพื่อคำนวณค่าทำนายของตัวแปรตามจากสมการถดถอยที่ประมาณค่าได้
 
 ```{r}
+fit
+summary(fit)
 #first 6th predicted values
-predict(fit) %>% head()
+pred<-predict(fit)
+plot(dat$salary, pred)
+cor(dat$salary, pred)^2
 ```
-
 
 ถ้ามีชุดข้อมูลใหม่เราสามารถนำมาทำนายเงินเดือนของอาจารย์มหาวิทยาลัยด้วยฟังก์ชัน `predict()` เช่นเดียวกัน ดังนี้
 
@@ -228,7 +287,6 @@ new_dat
 predict(fit, new_dat)
 ```
 
-
 # Job 2: Multiple Regression
 
 ## Basic concept
@@ -237,15 +295,22 @@ predict(fit, new_dat)
 
 ## syntax สำหรับวิเคราะห์ multiple regression ใน R
 
+**ควรปรับให้ตัวแปรจัดประเภทที่จะนำเข้าโมเดลเป็น factor ให้หมด**
+
 ```{r}
 # multiple regression model specification
-fit_multireg <- lm(salary ~ yrs.service + sex + rank, data = dat)
+fit_multireg <- lm(salary ~ yrs.service + sex + rank + discipline, data = dat)
 # all-in
 fit_multireg <- lm(salary ~ ., data = dat)
 summary(fit_multireg)
 ```
 
 ## Calculate Multiple Regression
+
+```{r}
+dat %>% select(starts_with("yrs")) %>%
+  cor()
+```
 
 ```{r}
 fit_multireg <- lm(salary ~ ., data = dat)
@@ -255,6 +320,10 @@ summary(fit_multireg)
 ## การแปลผลสมการถดถอย
 
 ในทำนองเดียวกับ การวิเคราะห์ความถดถอยอย่างง่าย การอธิบายความสัมพันธ์ระหว่างตัวแปรตาม กับตัวแปรอิสระหลาย ๆ ตัว ใน multiple regression จะพิจารณาจากค่าสัมประสิทธิ์การถดถอย ดังนี้
+
+-   เมื่อควบคุมให้ตัวแปรอิสระอื่น ๆ คงที่ รศ.มี**แนวโน้**มที่จะมีเงินเดือนสูงกว่า ผศ. 12907.6 บาท
+
+-   เมื่อควบคุมให้ตัวแปรอิสระอื่น ๆ คงที่ ศ. มีเงินเดือนสูงกว่า ผศ. **โดยเฉลี่ย** 45066.0 บาท
 
 ## Assumptions Checking
 
@@ -266,7 +335,6 @@ summary(fit_multireg)
 
 -   No Multicollinearity
 
-
 ```{r}
 par(mfrow=c(1,3))
 plot(fit_multireg, 1:3)
@@ -274,23 +342,21 @@ plot(fit_multireg, 1:3)
 
 ## Variance Inflation Factor (VIF)
 
+VIF \> 4, 5, 10 ถือว่าเกิดปัญหา multicollinearity
+
 ```{r}
 library(DescTools)
 VIF(fit_multireg)
 ```
 
-
-```
-
 ## Refit the model
 
 ```{r}
-fit_multireg2 <- lm(salary~ . -yrs.since.phd, data=dat)
+fit_multireg2 <- lm(salary~ . -yrs.service, data=dat)
 summary(fit_multireg2)
 vif(fit_multireg2)
 plot(fit_multireg2)
 ```
-
 
 ## Refit the model again
 
@@ -304,13 +370,14 @@ plot(fit_multireg3, 1:3)
 
 ## Refit the model again and again
 
+-   การใส่ term interaction ระหว่าง yrs.since.phdกับ discipline และ yrs.since.phdกับsex อาจจะช่วยเพิ่มประสิทธิภาพการทำนาย/อธิบาย ของโมเดลได้
+
 ```{r eval=F}
-fit_multireg4 <- lm(log(salary)~ . -yrs.service + 
-                      yrs.since.phd*sex, 
+fit_multireg4 <- lm(salary~ rank+discipline +sex + yrs.since.phd +
+                      yrs.since.phd*discipline +  yrs.since.phd*sex  , 
                     data=dat)
 summary(fit_multireg4)
 vif(fit_multireg4)
 plot(fit_multireg4)
 head(dat)
 ```
-
