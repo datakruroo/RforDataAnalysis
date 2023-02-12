@@ -1,0 +1,554 @@
+---
+title: "Day3_01 Data Analysis I"
+output: html_notebook
+---
+
+# 1. Exploratory Data Analysis
+
+## Exploratory Data Analysis (EDA)
+
+EDA เป็นกระบวนการวิเคราะห์เพื่อสำรวจข้อมูล ที่มีลักษณะเป็นกระบวนการทวนซ้ำ โดยมีวัตถุประสงค์เพื่อ
+
+-   ตั้งคำถาม/ประเด็นวิจัยจากข้อมูล
+
+-   **หาคำตอบที่เหมาะสมของคำถาม**ด้วยการใช้การจัดเตรียมข้อมูล ร่วมกับการทำทัศนภาพข้อมูล และ/หรือ การใช้สถิติวิเคราะห์
+
+-   ผลการวิเคราะห์ที่ได้อาจนำไปสู่ประเด็นคำถามวิจัยใหม่ ๆ
+
+## Exploratory Data Analysis (EDA) ในกระบวนการวิเคราะห์ข้อมูล
+
+
+
+## Exploratory Data Analysis (EDA)
+
+-   การสำรวจโครงสร้างชุดข้อมูล - `str()`/`glimpse()`, `head()`, `tail()`
+
+-   การสำรวจสภาพของตัวแปร
+
+-   การสำรวจความสัมพันธ์ระหว่างตัวแปร
+
+
+## ชุดข้อมูลที่ใช้เป็นตัวอย่าง
+
+เนื้อหาส่วนนี้จะใช้ชุดข้อมูล `TeacherSalaryData.csv` เป็นตัวอย่างประกอบเนื้อหา
+
+```{r}
+library(dplyr)
+dat <- read.csv("TeacherSalaryData.csv", 
+                header = TRUE,
+                stringsAsFactors = TRUE)
+```
+
+
+**วัตถุประสงค์ของการวิจัย**
+
+1.  (เชิงเปรียบเทียบ) เพื่อเปรียบเทียบค่าเฉลี่ยเงินเดือนของอาจารย์มหาวิทยาลัย ระหว่าง กลุ่มอาจารย์ที่มี ตำแหน่งทางวิชาการ สาขาวิชา และเพศแตกต่างกัน
+2.  (วิเคราะห์ความสัมพันธ์) เพื่อวิเคราะห์ความสัมพันธ์ระหว่างเงินเดือนของอาจารย์มหาวิทยาลัย กับ ตำแหน่งทางวิชาการ สาขาวิชา เพศ และประสบการณ์ทำงานที่แตกต่างกัน
+
+## สำรวจโครงสร้างของชุดข้อมูล
+
+
+```{r}
+glimpse(dat)
+```
+
+```{r echo=F}
+library(tidyr)
+dat <- dat[,-1]
+```
+
+# 2. สำรวจการแจกแจงของตัวแปร 
+
+## การสำรวจการแจกแจงของตัวแปร
+
+-   สำรวจขอบเขต ค่าที่เป็นไปได้ของตัวแปรแต่ละตัว ความสมเหตุสมผลของค่าดังกล่าว
+
+-   สำรวจการกระจายของตัวแปรแต่ละตัว
+
+-   ฟังก์ชันที่อาจนำมาใช้ในการดำเนินงาน `summary()`, `hist()`, `boxplot()`, `barplot()` , ...
+
+## สำรวจการแจกแจงของตัวแปร : สถิติพื้นฐาน
+
+```{r}
+summary(dat)
+```
+
+
+## สำรวจการแจกแจงของตัวแปร : สถิติพื้นฐาน
+
+```{r}
+# install.packages("psych")
+library(psych)
+# calculate descriptive stat
+describe(dat)
+```
+
+## สำรวจการแจกแจงของตัวแปร : ตัวแปรต่อเนื่อง
+
+```{r echo = F}
+par(mfrow=c(2,3))
+hist(dat$salary, col="steelblue", border="white")
+hist(dat$yrs.since.phd, col="steelblue", border="white")
+hist(dat$yrs.service, col="steelblue", border="white")
+boxplot(dat$salary, horizontal = TRUE)
+boxplot(dat$yrs.since.phd, horizontal = TRUE)
+boxplot(dat$yrs.service, horizontal = TRUE)
+```
+
+## สำรวจการแจกแจงของตัวแปร : ตัวแปรจัดประเภท
+
+```{r}
+tab_rank <- table(dat$rank)
+tab_rank
+tab_discipline <- table(dat$discipline)
+tab_discipline
+tab_sex <- table(dat$sex)
+tab_sex
+```
+
+
+```{r fig.height = 4}
+barplot(tab_rank, col = "orange")
+```
+
+## ดำเนินการจัดกระทำข้อมูล
+
+ใส่ label ให้กับ `discipline`
+
+```{r}
+dat$discipline <- factor(dat$discipline,
+                         levels = c("A","B"),
+                         labels = c("Pure Science",
+                                    "Applied Science"))
+```
+
+สลับ level ของตำแหน่งวิชาการให้เป็นไปตามลำดับ
+
+```{r}
+dat <- dat %>% 
+        mutate(rank = factor(rank,
+                             levels = c("AsstProf",
+                                        "AssocProf",
+                                        "Prof")))
+```
+
+
+# สำรวจความสัมพันธ์ระหว่างตัวแปร
+
+## การสำรวจความสัมพันธ์ระหว่างตัวแปร
+
+### จำแนกตามประเภทของตัวแปร
+
+-   ความสัมพันธ์ระหว่างตัวแปรตามกับตัวแปรอิสระ
+
+-   ความสัมพันธ์ระหว่างตัวแปรอิสระ
+
+### จำแนกตามประเภทของข้อมูล
+
+-   ความสัมพันธ์ระหว่างตัวแปรเชิงปริมาณกับตัวแปรเชิงปริมาณ
+
+-   ความสัมพันธ์ระหว่างตัวแปรเชิงปริมาณกับตัวแปรจัดประเภท
+
+-   ความสัมพันธ์ระหว่างตัวแปรจัดประเภทกับตัวแปรจัดประเภท
+
+
+# วัตถุประสงค์ลักษณะที่ 1 :  เชิงเปรียบเทียบ
+
+## วัตถุประสงค์ลักษณะที่ 1
+
+**เพื่อเปรียบเทียบค่าเฉลี่ยเงินเดือนของอาจารย์มหาวิทยาลัย ระหว่าง กลุ่มอาจารย์ที่มี ตำแหน่งทางวิชาการ สาขาวิชา และเพศแตกต่างกัน**
+
+-   สำรวจความสัมพันธ์ (วิเคราะห์เปรียบเทียบ) เงินเดือน จำแนกตามตำแหน่งวิชาการ สาขาวิชา และเพศ
+
+-   สำรวจความสัมพันธ์ระหว่างตำแหน่งวิชาการ สาขาวิชา และเพศ
+
+## ฟังก์ชัน `plot()`
+
+ฟังก์ชัน `plot()` เป็น generic graphic function ซึ่งสามารถใช้ plot แผนภาพที่แตกต่างกันได้ โดยขึ้นกับลักษณะข้อมูลที่นำเข้าในฟังก์ชัน
+
+-   ถ้า x และ y เป็นตัวแปรเชิงปริมาณทั้งคู่ ฟังก์ชันจะให้แผนภาพการกระจาย (scatter plot)
+
+-   ถ้า x เป็นตัวแปรจัดประเภท และ y เป็นตัวแปรเชิงปริมาณ จะให้ boxplot เชิงเปรียบเทียบ
+
+-   ถ้า x เป็นตัวแปรจัดประเภท และ y เป็นตัวแปรจัดประเภท จะให้ mosaic plot
+
+
+```{r eval=F}
+plot(x, y,
+     col = "black",
+     pch = 16,
+     xlab = "x variable",
+     ylab = "y variable")
+```
+
+## **Boxplot เปรียบเทียบเงินเดือนตามตัวแปรอิสระ**
+
+ความสัมพันธ์ระหว่างตัวแปรตามกับตัวแปรอิสระ
+
+
+```{r echo=F}
+par(mfrow = c(2,2), mar=c(3,5,1,1))
+plot(x = dat$rank, y = dat$salary,
+     xlab = "", ylab = "salary")
+plot(x = dat$discipline, y = dat$salary,
+    xlab = "", ylab = "salary")
+plot(x = dat$sex, y = dat$salary,
+    xlab = "", ylab = "salary")
+```
+
+## **สถิติพื้นฐานของเงินเดือนจำแนกตาม discipline**
+
+ความสัมพันธ์ระหว่างตัวแปรตามกับตัวแปรอิสระ
+
+```{r}
+dat %>% group_by(discipline) %>%
+  summarise(mean = mean(salary),
+            sd = sd(salary),
+            min = min(salary),
+            max = max(salary))
+```
+
+```{r}
+dat %>% group_by(rank) %>%
+  summarise(mean = mean(salary),
+            sd = sd(salary),
+            min = min(salary),
+            max = max(salary))
+```
+
+## Exploring Interaction Effects (1)
+
+```{r}
+interaction.plot(x.factor = dat$rank,
+                 trace.factor = dat$discipline,
+                 response = dat$salary,
+                 xlab = "rank",
+                 ylab = "salary",
+                 col = c("steelblue","orange"),
+                 lwd = 2,
+                 trace.label = "discipline",
+                 type = "b")
+```
+
+```{r}
+par(mfrow=c(1,2))
+interaction.plot(x.factor = dat$sex,
+                 trace.factor = dat$discipline,
+                 response = dat$salary,
+                 xlab = "rank",
+                 ylab = "salary",
+                 col = c("steelblue","orange"),
+                 lwd = 2,
+                 trace.label = "discipline",
+                 type = "b")
+interaction.plot(x.factor = dat$sex,
+                 trace.factor = dat$rank,
+                 response = dat$salary,
+                 xlab = "rank",
+                 ylab = "salary",
+                 col = c("steelblue","orange"),
+                 lwd = 2,
+                 trace.label = "discipline",
+                 type = "b")
+```
+
+## สรุปผลการสำรวจ
+
+-   เงินเดือนของอาจารย์มหาวิทยาลัย มีแนวโน้มแตกต่างกันได้ตาม ตำแหน่งวิชาการ สาขาวิชา และเพศ
+
+-   มีแนวโน้มว่า จะอิทธิพลปฏิสัมพันธ์ของตำแหน่งวิชาการ และ เพศ ต่อเงินเดือนอาจารย์
+
+## Note: **ตารางแจกแจงความถี่สองทาง**
+
+```{r}
+table(dat$rank, dat$discipline)
+table(dat$rank, dat$sex)
+table(dat$discipline, dat$sex)
+```
+
+## Note: **Mosaic plot**
+
+```{r, fig.height=5}
+par(mfrow=c(1,2))
+plot(dat$rank, dat$discipline, xlab = " ", ylab = " ")
+plot(dat$discipline, dat$rank, xlab = " ", ylab = " ")
+```
+
+
+## Modelling สำหรับวัตถุประสงค์ลักษณะแรก
+
+
+- indenpendent-sample t-test
+
+- One-way ANOVA
+
+- Three-Way ANOVA
+
+- Three-Way ANOVA with Interaction
+
+## Job1: Independent-sample t-test
+
+สมมุติฐานการทดสอบ
+
+$H_0: \ \mu_{applied} \leq \mu_{pure}$
+
+$H_1: \ \mu_{applied} > \mu_{pure}$
+
+
+```{r}
+dat %>% group_by(discipline) %>%
+  summarise(mean = mean(salary),
+            sd = sd(salary),
+            min = min(salary),
+            max = max(salary))
+```
+
+
+
+## Job1: Boxplot using ggpubr
+
+```{r fig.height=4}
+#install.packages("ggpubr")
+library(ggpubr)
+ggboxplot(data = dat, x = "discipline", y = "salary",
+          color = "discipline")
+```
+
+
+## Job1: Levene's Test for equality of variances
+
+```{r messsage=F}
+#install.packages("car")
+library(car)
+leveneTest(salary ~ discipline, data = dat)
+```
+
+## Job1: Syntax for t-test
+
+```{r eval=F}
+# two-sided test
+t.test(salary ~ discipline ,data=dat, 
+       var.equal = TRUE)
+# one-sided test
+t.test(salary ~ discipline, data=dat, 
+       var.equal = FALSE,
+       alternative = "greater")
+```
+
+## Job1: Independent-sample t-test output
+
+```{r}
+t.test(salary ~ discipline, data=dat, 
+       var.equal = FALSE,
+       alternative = "less")
+```
+
+
+## Job1: Assumptions check
+
+independent sample t-test มีข้อตกลงเบื้องต้นที่สำคัญดังนี้
+
+-   Independence
+
+-   Normality
+
+-   Homogeneity of variances
+
+
+```{r}
+shapiro.test(dat$salary)
+```
+
+
+```{r eval=F}
+dat %>% group_by(rank) %>%
+   summarise(mean = mean(salary),
+            sd = sd(salary),
+            min = min(salary),
+            max = max(salary))%>%
+  arrange(desc(mean))
+```
+
+## Job2: Calculate F-test for Overall hypothesis
+
+
+$H_0: \ \mu_1 = \mu_2 = \mu_3$
+
+$H_1: \ not \ H_0$
+
+```{r}
+# calculate analysis of variance
+fit <- aov(salary ~ rank, data= dat)
+summary(fit)
+```
+
+ผลการวิเคราะห์ข้างต้นสรุปว่า ...
+
+
+## Job2: Multiple comparison
+
+การทดสอบเพื่อเปรียบเทียบค่าเฉลี่ยรายคู่มีหลายวิธีการ
+
+-   `TukeyHSD()`
+
+-   `pairwise.t.test()`
+
+-   `ScheffeTest()`
+
+## Job2: Calculate Tukey HSD
+
+```{r}
+TukeyHSD(fit)
+```
+
+## Job2: Calculate Bonferroni
+
+```{r}
+pairwise.t.test(x = dat$salary, g = dat$rank,
+                pool.sa = TRUE, p.adjust.method = "bonferroni")
+# c("holm", "hochberg", "hommel", "bonferroni", "BH", "BY",
+#   "fdr", "none")
+```
+
+## Job2: Calculate Scheffe's test
+
+```{r message=F}
+#install.packages("DescTools")
+library(DescTools)
+ScheffeTest(fit)
+```
+
+## Job2: Assumption Checking
+
+-   Normality
+
+-   Homogeneity of variances
+
+
+```{r fig.height=4}
+par(mfrow=c(1,2))
+plot(fit, 1:2)
+```
+
+## Job2: Welch's F-test
+
+```{r}
+oneway.test(salary ~ rank, data = dat, var.equal = F)
+```
+
+
+## Job3: Three-Way ANOVA
+
+## Job3: Summary Stat
+
+```{r}
+dat %>% gather(rank, discipline, sex,
+               key = "ind",
+               value = "value")%>%
+  group_by(ind, value) %>%
+  summarise(mean = mean(salary),
+            sd = sd(salary))
+```
+
+
+
+```{r message = F, fig.height=4}
+ggdotplot(data = dat, x = "rank", y = "salary",
+       add = c("mean_se","dotplot"),
+       col = "rank",
+       binwidth = 0.2)
+```
+
+
+## Job3: Calculate F-test for Three-Way ANOVA
+
+```{r}
+fit3 <- aov(salary ~ rank + discipline + sex , 
+            data = dat)
+summary(fit3)
+```
+
+## Job3: Calculate Multiple Comparison
+
+```{r}
+TukeyHSD(fit3)
+```
+
+## Job3: Calculate Multiple Comparison
+
+```{r}
+ScheffeTest(fit3)
+```
+
+## Job3: Assumptions Checking
+
+
+```{r fig.height = 4}
+par(mfrow=c(1,2))
+plot(fit3, 1:2)
+```
+
+
+```{r}
+leveneTest(salary ~ rank*discipline*sex , data = dat)
+```
+
+## Job4: Three-Way ANOVA 2
+
+
+## Job4: Summary Stat
+
+```{r}
+dat %>% group_by(rank, sex) %>%
+  summarise(mean = mean(salary),
+          sd = sd(salary))
+```
+
+
+```{r fig.height=4}
+ggboxplot(data = dat, x = "discipline", y = "salary",
+          col = "sex")
+```
+
+
+```{r}
+interaction.plot(x.factor = dat$discipline,
+                 trace.factor = dat$sex,
+                 response = dat$salary,
+                 col = c("steelblue","orange"),
+                 lwd = 2,
+                 trace.label = "discipline",
+                 type = "b")
+```
+
+## Job4: calculate ANOVA with interaction
+
+```{r}
+fit_job4<-aov(salary ~ rank + discipline + sex + discipline*sex, 
+              data = dat)
+summary(fit_job4)
+```
+
+
+## Job4: Simple Effect Analysis
+
+```{r message=F}
+library(phia)
+testInteractions(fit_job4,
+                 fixed = "discipline",
+                 across = "sex",
+                 adjustment = "bonferroni")
+```
+
+## Job4: Simple Effect Analysis
+
+```{r}
+testInteractions(fit_job4,
+                 fixed = "sex",
+                 across = "discipline",
+                 adjustment = "bonferroni",
+                 pairwise = "discipline")
+```
+
+
+
