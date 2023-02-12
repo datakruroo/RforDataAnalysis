@@ -1,0 +1,316 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+# การวิเคราะห์ความสัมพันธ์
+
+## วัตถุประสงค์ลักษณะที่ 2
+
+เพื่อวิเคราะห์ความสัมพันธ์ระหว่างเงินเดือนของอาจารย์มหาวิทยาลัย กับ ตำแหน่งทางวิชาการ สาขาวิชา เพศ และประสบการณ์ทำงานที่แตกต่างกัน
+
+1.  สำรวจความสัมพันธ์ ระหว่างเงินเดือนอาจารย์มหาวิทยาลัยกับตัวแปรอิสระต่าง ๆ
+2.  สำรวจความสัมพันธ์ระหว่างตัวแปรอิสระ
+
+## Importing Data
+
+```{r}
+library(dplyr)
+dat <- read.csv("TeacherSalaryData.csv", 
+                header = TRUE,
+                stringsAsFactors = TRUE)
+dat<-dat[,-1]
+dat$discipline <- factor(dat$discipline,
+                         levels = c("A","B"),
+                         labels = c("Pure Science",
+                                    "Applied Science"))
+dat <- dat %>% 
+        mutate(rank = factor(rank,
+                             levels = c("AsstProf",
+                                        "AssocProf",
+                                        "Prof")))
+```
+
+## Importing Data
+
+```{r}
+head(dat)
+```
+
+## ฟังก์ชัน `plot()`
+
+ฟังก์ชัน `plot()` เป็น generic graphic function ซึ่งสามารถใช้ plot แผนภาพที่แตกต่างกันได้ โดยขึ้นกับลักษณะข้อมูลที่นำเข้าในฟังก์ชัน
+
+-   ถ้า x และ y เป็นตัวแปรเชิงปริมาณทั้งคู่ ฟังก์ชันจะให้แผนภาพการกระจาย (scatter plot)
+
+-   ถ้า x เป็นตัวแปรจัดประเภท และ y เป็นตัวแปรเชิงปริมาณ จะให้ boxplot เชิงเปรียบเทียบ
+
+-   ถ้า x เป็นตัวแปรจัดประเภท และ y เป็นตัวแปรจัดประเภท จะให้ mosaic plot
+
+## สำรวจความสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ 
+
+```{r fig.height=4.5}
+par(mfrow=c(1,2))
+plot(dat$yrs.since.phd, dat$salary, pch=16, col="steelblue")
+plot(dat$yrs.since.phd, dat$salary, pch=16, col="orange")
+```
+
+## สำรวจความสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ 
+
+```{r fig.height=4.5}
+library(ggpubr)
+ggscatter(dat, x = "yrs.since.phd",
+               y = "salary",
+          add = c("reg.line"), col= "steelblue")
+```
+
+# สหสัมพันธ์
+
+## สหสัมพันธ์ระหว่างเงินเดือนกับตัวแปรอิสระเชิงปริมาณ
+
+ฟังก์ชัน `cor()` ใช้หาค่า Correlation ระหว่างตัวแปรเชิงปริมาณที่กำหนด
+
+-   ทิศทาง (+, -)
+
+-   ขนาด \[-1, 1\]
+
+-   นัยสำคัญทางสถิติ
+
+-   $R^2$  - coefficient of determination
+
+## ขนาดและทิศทางของสหสัมพันธ์
+
+ดูใน ppt
+
+## ขนาดของสหสัมพันธ์
+
+ดูใน ppt
+
+## Syntax สำหรับคำนวณ correlation ใน R
+
+```{r eval=F}
+cor.test(x, y,
+         alternative = c("two.sided", 
+                         "less", 
+                         "greater"),
+         method = c("pearson", 
+                    "kendall", 
+                    "spearman"))
+```
+
+## การคำนวณ correlation ด้วย R
+
+```{r}
+dat %>%
+  select(salary, yrs.service, yrs.since.phd) %>%
+  cor()
+```
+
+## Correlation Test
+
+```{r}
+cor.test(dat$salary, dat$yrs.service)
+```
+
+## Coefficient of Determination
+
+ดูใน ppt
+
+# Exploring Interaction Effects
+
+## Exploring Interaction Effects
+
+```{r fig.height=4}
+ggscatter(dat, x = "yrs.since.phd",
+               y = "salary",
+          add = c("reg.line"), col= "rank")
+```
+
+```{r fig.height=4}
+ggscatter(dat, x = "yrs.since.phd",
+               y = "salary",
+          add = c("reg.line"), col= "discipline")
+```
+
+```{r fig.height=4}
+ggscatter(dat, x = "yrs.since.phd",
+               y = "salary",
+          add = c("reg.line"), col= "sex")
+```
+
+## สรุป
+
+ผลการสำรวจข้อมูลข้างต้นพบว่า ...
+
+
+
+# Modelling 
+
+## Modelling: Regression analysis
+
+- Simple Regression Analysis
+
+- Multiple Regression Analysis
+
+- Multiple Regression Analysis with Interaction??
+
+
+## วัตถุประสงค์ของการวิเคราะห์การถดถอย
+
+-   เพื่ออธิบายความสัมพันธ์ระหว่างตัวแปรตามกับตัวแปรอิสระ
+
+-   เพื่อทำนายแนวโน้มตัวแปรตามด้วยตัวแปรอิสระ
+
+
+# Job 1: Simple Regression
+
+## Basic Concept
+
+ดูใน ppt
+
+## Simple Regression
+
+$\hat{salary} = b_0+b_1 \times yrs.service$
+
+syntax สำหรับวิเคราะห์ regression ใน R
+
+```{r}
+fit <- lm(salary ~ yrs.service, data = dat)
+summary(fit)
+```
+
+
+## ลองแปลผลการวิเคราะห์
+
+
+เราสามารถแปลผลเพื่ออธิบายความสัมพันธ์ ระหว่างตัวแปรตามกับตัวแปรอิสระได้จากค่าสัมประสิทธิ์การถดถอย
+
+-   สัมประสิทธิ์ความชัน = 779.6
+
+-   สัมประสิทธิ์จุดตัดแกน y = 99974.7
+
+## Assumptions Checking
+
+การตรวจสอบข้อตกลงเบื้องต้นของ regression จะใช้การวิเคราะห์เศษเหลือ (residual analysis)
+
+-   Linearity
+
+-   Normality
+
+-   Homoscedasticity
+
+
+## Calculate Residual Plots
+
+```{r}
+par(mfrow=c(1,3))
+plot(fit, 1:3)
+```
+
+
+## การคำนวณค่าทำนายจากสมการถดถอย
+
+เราสามารถใช้ฟังก์ชัน `predict()` เพื่อคำนวณค่าทำนายของตัวแปรตามจากสมการถดถอยที่ประมาณค่าได้
+
+```{r}
+#first 6th predicted values
+predict(fit) %>% head()
+```
+
+
+ถ้ามีชุดข้อมูลใหม่เราสามารถนำมาทำนายเงินเดือนของอาจารย์มหาวิทยาลัยด้วยฟังก์ชัน `predict()` เช่นเดียวกัน ดังนี้
+
+```{r}
+new_dat<-data.frame(yrs.service = c(2,3,6,9,10))
+new_dat
+
+predict(fit, new_dat)
+```
+
+
+# Job 2: Multiple Regression
+
+## Basic concept
+
+ดูใน ppt
+
+## syntax สำหรับวิเคราะห์ multiple regression ใน R
+
+```{r}
+# multiple regression model specification
+fit_multireg <- lm(salary ~ yrs.service + sex + rank, data = dat)
+# all-in
+fit_multireg <- lm(salary ~ ., data = dat)
+summary(fit_multireg)
+```
+
+## Calculate Multiple Regression
+
+```{r}
+fit_multireg <- lm(salary ~ ., data = dat)
+summary(fit_multireg)
+```
+
+## การแปลผลสมการถดถอย
+
+ในทำนองเดียวกับ การวิเคราะห์ความถดถอยอย่างง่าย การอธิบายความสัมพันธ์ระหว่างตัวแปรตาม กับตัวแปรอิสระหลาย ๆ ตัว ใน multiple regression จะพิจารณาจากค่าสัมประสิทธิ์การถดถอย ดังนี้
+
+## Assumptions Checking
+
+-   Linearity
+
+-   Normality
+
+-   Heteroscedasticity
+
+-   No Multicollinearity
+
+
+```{r}
+par(mfrow=c(1,3))
+plot(fit_multireg, 1:3)
+```
+
+## Variance Inflation Factor (VIF)
+
+```{r}
+library(DescTools)
+VIF(fit_multireg)
+```
+
+
+```
+
+## Refit the model
+
+```{r}
+fit_multireg2 <- lm(salary~ . -yrs.since.phd, data=dat)
+summary(fit_multireg2)
+vif(fit_multireg2)
+plot(fit_multireg2)
+```
+
+
+## Refit the model again
+
+```{r eval=F}
+fit_multireg3 <- lm(log(salary)~ . -yrs.service, data=dat)
+summary(fit_multireg3)
+vif(fit_multireg3)
+par(mfrow=c(1,3))
+plot(fit_multireg3, 1:3)
+```
+
+## Refit the model again and again
+
+```{r eval=F}
+fit_multireg4 <- lm(log(salary)~ . -yrs.service + 
+                      yrs.since.phd*sex, 
+                    data=dat)
+summary(fit_multireg4)
+vif(fit_multireg4)
+plot(fit_multireg4)
+head(dat)
+```
+
